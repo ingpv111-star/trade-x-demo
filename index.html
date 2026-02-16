@@ -8,7 +8,6 @@
     body { margin:0; font-family:Arial; background:#0f172a; color:white; }
     header { padding:15px; background:#020617; text-align:center; font-size:20px; font-weight:bold; }
     .box { padding:12px; text-align:center; background:#111827; margin-bottom:8px; }
-    .green { color:#22c55e; }
     button { padding:10px; margin:5px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; }
     .buy{background:green;color:white;}
     .sell{background:red;color:white;}
@@ -23,7 +22,7 @@
 
 <div class="box">
   Plan: <span id="planType">FREE</span><br>
-  <span id="balance" class="green">Balance: ₹10000</span>
+  <span id="balance">Balance: ₹10000</span>
 </div>
 
 <div class="box">
@@ -53,6 +52,12 @@
 <div class="box history" id="history"></div>
 
 <script src="script.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
+</script>
 
 </body>
 </html>
