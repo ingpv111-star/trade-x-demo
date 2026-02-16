@@ -3,36 +3,107 @@
 <head>
   <title>Trade X Demo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
     body {
-      font-family: Arial;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #fff;
+    }
+
+    header {
+      padding: 15px;
       text-align: center;
-      background: #111;
-      color: white;
+      background: #020617;
+      font-size: 20px;
+      font-weight: bold;
     }
+
+    .balance-box {
+      padding: 15px;
+      background: #111827;
+      text-align: center;
+      font-size: 18px;
+      color: #22c55e;
+    }
+
+    .chart {
+      height: 220px;
+      background: linear-gradient(180deg,#1e293b,#020617);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #94a3b8;
+    }
+
+    .trade-panel {
+      padding: 15px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
     button {
-      padding: 12px 20px;
-      margin: 10px;
+      flex: 1;
+      padding: 15px;
       font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
     }
-    .buy { background: green; color: white; }
-    .sell { background: red; color: white; }
+
+    .buy { background: #16a34a; color: white; }
+    .sell { background: #dc2626; color: white; }
+
+    .history-box {
+      background: #111827;
+      padding: 10px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    .price {
+      font-size: 20px;
+      margin-top: 10px;
+    }
+
   </style>
 </head>
+
 <body>
 
-<h2>Trade X Demo</h2>
+<header>📊 TRADE X DEMO</header>
 
-<h3 id="balance">Balance: ₹10000</h3>
-<h3 id="price">Price: 100</h3>
+<div class="balance-box" id="balance">
+  Balance: ₹10000
+</div>
 
-<button class="buy" onclick="placeTrade('BUY')">BUY</button>
-<button class="sell" onclick="placeTrade('SELL')">SELL</button>
+<div class="chart">
+  <div>
+    <div class="price" id="price">Price: 100</div>
+    📈 Live Market Simulation
+  </div>
+</div>
 
-<h3>Trade History</h3>
-<ul id="history"></ul>
+<div class="trade-panel">
+  <div class="row">
+    <button class="buy" onclick="placeTrade('BUY')">BUY</button>
+    <button class="sell" onclick="placeTrade('SELL')">SELL</button>
+  </div>
+</div>
+
+<div class="history-box" id="history">
+</div>
 
 <script>
+
 let balance = parseFloat(localStorage.getItem("balance")) || 10000;
 let price = 100;
 let trades = JSON.parse(localStorage.getItem("trades")) || [];
@@ -46,10 +117,10 @@ function updateUI() {
   priceEl.innerText = "Price: " + price.toFixed(2);
 
   historyEl.innerHTML = "";
-  trades.forEach(t => {
-    let li = document.createElement("li");
-    li.innerText = `${t.type} | Entry: ${t.entry} | Exit: ${t.exit} | P/L: ₹${t.pl}`;
-    historyEl.appendChild(li);
+  trades.slice().reverse().forEach(t => {
+    let div = document.createElement("div");
+    div.innerText = `${t.type} | Entry: ${t.entry} | Exit: ${t.exit} | P/L: ₹${t.pl}`;
+    historyEl.appendChild(div);
   });
 }
 
@@ -91,6 +162,7 @@ function placeTrade(type) {
 }
 
 updateUI();
+
 </script>
 
 </body>
