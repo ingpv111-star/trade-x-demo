@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Trade X Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #111;
+      color: white;
+    }
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      font-size: 16px;
+    }
+    .buy { background: green; color: white; }
+    .sell { background: red; color: white; }
+  </style>
+</head>
+<body>
+
+<h2>Trade X Demo</h2>
+
+<h3 id="balance">Balance: ₹10000</h3>
+<h3 id="price">Price: 100</h3>
+
+<button class="buy" onclick="placeTrade('BUY')">BUY</button>
+<button class="sell" onclick="placeTrade('SELL')">SELL</button>
+
+<h3>Trade History</h3>
+<ul id="history"></ul>
+
+<script>
+let balance = parseFloat(localStorage.getItem("balance")) || 10000;
+let price = 100;
+let trades = JSON.parse(localStorage.getItem("trades")) || [];
+
+const balanceEl = document.getElementById("balance");
+const priceEl = document.getElementById("price");
+const historyEl = document.getElementById("history");
+
+function updateUI() {
+  balanceEl.innerText = "Balance: ₹" + balance.toFixed(2);
+  priceEl.innerText = "Price: " + price.toFixed(2);
+
+  historyEl.innerHTML = "";
+  trades.forEach(t => {
+    let li = document.createElement("li");
+    li.innerText = `${t.type} | Entry: ${t.entry} | Exit: ${t.exit} | P/L: ₹${t.pl}`;
+    historyEl.appendChild(li);
+  });
+}
+
+function movePrice() {
+  let change = (Math.random() - 0.5) * 2;
+  price += change;
+  updateUI();
+}
+
+setInterval(movePrice, 1000);
+
+function placeTrade(type) {
+  let entry = price;
+
+  setTimeout(() => {
+    let exit = price;
+    let pl = 0;
+
+    if (type === "BUY") {
+      pl = exit - entry;
+    } else {
+      pl = entry - exit;
+    }
+
+    balance += pl;
+
+    trades.push({
+      type,
+      entry: entry.toFixed(2),
+      exit: exit.toFixed(2),
+      pl: pl.toFixed(2)
+    });
+
+    localStorage.setItem("balance", balance);
+    localStorage.setItem("trades", JSON.stringify(trades));
+
+    updateUI();
+  }, 3000);
+}
+
+updateUI();
+</script>
+
+</body>
+</html>
