@@ -35,7 +35,7 @@ function updateUI(){
   });
 }
 
-/* ---------- DRAW CHART ---------- */
+/* ---------- DRAW CHART (STABLE) ---------- */
 
 function drawChart() {
 
@@ -43,10 +43,9 @@ function drawChart() {
 
   if(chartData.length < 2) return;
 
-  let min = Math.min(...chartData);
-  let max = Math.max(...chartData);
-  let range = max - min;
-  if(range === 0) range = 1;
+  let fixedMin = 80;
+  let fixedMax = 120;
+  let range = fixedMax - fixedMin;
 
   ctx.beginPath();
   ctx.strokeStyle = "#22c55e";
@@ -55,7 +54,7 @@ function drawChart() {
   chartData.forEach((p, i) => {
 
     let x = (i / chartData.length) * canvas.width;
-    let y = canvas.height - ((p - min) / range) * canvas.height;
+    let y = canvas.height - ((p - fixedMin) / range) * canvas.height;
 
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
