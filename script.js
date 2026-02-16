@@ -62,7 +62,7 @@ function movePrice(){
 setInterval(movePrice,1000);
 
 function openTrade(type){
-  if(balance<=0 && plan==="FREE") return alert("Balance Finished. Use Invite or Upgrade.");
+  if(balance<=0 && plan==="FREE") return alert("Balance Finished.");
   if(currentTrade) return alert("Trade running");
 
   let lot=parseFloat(document.getElementById("lot").value)||1;
@@ -119,13 +119,7 @@ function upgrade(type){
 }
 
 function resetBalance(){
-  if(plan==="FREE") return alert("Reset only for Premium");
-
-  let now=Date.now();
-  if(now-lastReset<86400000) return alert("Reset allowed once in 24h");
-
-  lastReset=now;
-  localStorage.setItem("lastReset",now);
+  if(plan==="FREE") return alert("Premium Only");
 
   if(plan==="399") balance=1000000;
   if(plan==="999") balance=10000000;
@@ -135,20 +129,9 @@ function resetBalance(){
 }
 
 function inviteReward(){
-  let count=parseInt(localStorage.getItem("invite"))||0;
-  count++;
-  localStorage.setItem("invite",count);
-
-  let reward=1000;
-  if(count===1) reward=5000;
-  if(count===2) reward=4000;
-  if(count===3) reward=3000;
-  if(count===4) reward=2000;
-
-  balance+=reward;
+  balance+=1000;
   localStorage.setItem("balance",balance);
-
-  alert("Invite Reward: ₹"+reward);
+  alert("Invite Reward ₹1000 Added");
 }
 
 initPlan();
