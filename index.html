@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <title>Trade X Demo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="manifest.json">
-
   <style>
     body { margin:0; font-family:Arial; background:#0f172a; color:white; text-align:center; }
     header { padding:15px; background:#020617; font-size:20px; font-weight:bold; }
@@ -21,7 +19,7 @@
 
 <body>
 
-<header>📊 TRADE X DEMO (DEBUG)</header>
+<header>📊 TRADE X DEMO</header>
 
 <div class="box">
   Plan: <span id="planType">FREE</span><br>
@@ -31,24 +29,30 @@
 <div class="box">
   <canvas id="chart" width="350" height="150" style="background:#0b1220;border-radius:8px;"></canvas>
   <div id="price" style="margin-top:8px;"></div>
-  <div id="debugStatus" style="margin-top:10px;color:yellow;"></div>
+</div>
+
+<div class="box">
+  <button class="premium" onclick="upgrade(399)">👑 LAUNCH ₹399</button>
+  <button class="premium" onclick="upgrade(999)">🚀 LAUNCH ₹999</button>
+  <button onclick="resetBalance()">Reset</button>
+</div>
+
+<div class="box">
+  <input type="number" id="lot" placeholder="Lot Size">
+  <input type="number" id="sl" placeholder="Stop Loss">
+  <input type="number" id="target" placeholder="Target">
+
+  <button class="buy" onclick="openTrade('BUY')">BUY</button>
+  <button class="sell" onclick="openTrade('SELL')">SELL</button>
+</div>
+
+<div class="box">
+  <button onclick="inviteReward()">Invite Reward</button>
 </div>
 
 <div class="box history" id="history"></div>
 
-<script>
-  document.getElementById("debugStatus").innerText = "DEBUG: JS loading…";
-</script>
-
-<script src="script.js" onerror="document.getElementById('debugStatus').innerText = 'ERROR: script.js NOT FOUND';"></script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js')
-  .then(() => console.log("Service Worker Registered"))
-  .catch(() => console.log("SW Register Failed"));
-}
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
