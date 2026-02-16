@@ -3,225 +3,186 @@
 <head>
   <title>Trade X Demo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: #0f172a;
-      color: white;
-    }
-
-    header {
-      padding: 15px;
-      background: #020617;
-      text-align: center;
-      font-size: 20px;
-      font-weight: bold;
-    }
-
-    .balance-box {
-      padding: 15px;
-      text-align: center;
-      background: #111827;
-      color: #22c55e;
-      font-size: 18px;
-    }
-
-    .chart {
-      height: 200px;
-      background: linear-gradient(180deg,#1e293b,#020617);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      color: #94a3b8;
-    }
-
-    .panel {
-      padding: 15px;
-    }
-
-    input {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 8px;
-      border-radius: 6px;
-      border: none;
-    }
-
-    button {
-      width: 48%;
-      padding: 12px;
-      font-size: 16px;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .buy { background: green; color: white; }
-    .sell { background: red; color: white; }
-
-    .row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    .history {
-      max-height: 150px;
-      overflow-y: auto;
-      background: #111827;
-      padding: 10px;
-      font-size: 13px;
-    }
-
-    .open-trade {
-      background: #1e293b;
-      padding: 10px;
-      margin-bottom: 10px;
-      font-size: 13px;
-    }
-
+    body { margin:0; font-family:Arial; background:#0f172a; color:white; }
+    header { padding:15px; background:#020617; text-align:center; font-size:20px; font-weight:bold; }
+    .box { padding:12px; text-align:center; background:#111827; }
+    .green { color:#22c55e; }
+    .red { color:#ef4444; }
+    button { padding:10px; margin:5px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; }
+    .buy{background:green;color:white;}
+    .sell{background:red;color:white;}
+    .premium{background:purple;color:white;}
+    input{width:95%;padding:6px;margin:4px;border-radius:6px;border:none;}
+    .history{max-height:120px;overflow:auto;background:#111827;padding:8px;font-size:12px;}
   </style>
 </head>
-
 <body>
 
 <header>📊 TRADE X DEMO</header>
 
-<div class="balance-box" id="balance">
-  Balance: ₹10000
+<div class="box">
+  Plan: <span id="planType">FREE</span><br>
+  <span id="balance" class="green">Balance: ₹10000</span>
 </div>
 
-<div class="chart">
+<div class="box">
   <div id="price">Price: 100</div>
 </div>
 
-<div class="panel">
-
-  <input type="number" id="lot" placeholder="Lot Size (Default 1)" />
-  <input type="number" id="sl" placeholder="Stop Loss Price" />
-  <input type="number" id="target" placeholder="Target Price" />
-
-  <div class="row">
-    <button class="buy" onclick="openTrade('BUY')">BUY</button>
-    <button class="sell" onclick="openTrade('SELL')">SELL</button>
-  </div>
-
-  <div id="openTradeBox"></div>
-
-  <h4>History</h4>
-  <div class="history" id="history"></div>
-
+<div class="box">
+  <button class="premium" onclick="upgrade(399)">Upgrade ₹399</button>
+  <button class="premium" onclick="upgrade(999)">Upgrade ₹999</button>
+  <button onclick="resetBalance()">Reset (Premium Only)</button>
 </div>
+
+<div class="box">
+  <input type="number" id="lot" placeholder="Lot Size (1 default)">
+  <input type="number" id="sl" placeholder="Stop Loss">
+  <input type="number" id="target" placeholder="Target">
+
+  <button class="buy" onclick="openTrade('BUY')">BUY</button>
+  <button class="sell" onclick="openTrade('SELL')">SELL</button>
+</div>
+
+<div class="box">
+  <button onclick="inviteReward()">Use Invite Code</button>
+</div>
+
+<div class="box history" id="history"></div>
 
 <script>
 
+let plan = localStorage.getItem("plan") || "FREE";
 let balance = parseFloat(localStorage.getItem("balance")) || 10000;
 let price = 100;
 let trades = JSON.parse(localStorage.getItem("trades")) || [];
 let currentTrade = null;
+let lastReset = localStorage.getItem("lastReset") || 0;
 
+const planEl = document.getElementById("planType");
 const balanceEl = document.getElementById("balance");
 const priceEl = document.getElementById("price");
 const historyEl = document.getElementById("history");
-const openTradeBox = document.getElementById("openTradeBox");
 
-function updateUI() {
-  balanceEl.innerText = "Balance: ₹" + balance.toFixed(2);
-  priceEl.innerText = "Price: " + price.toFixed(2);
+function initPlan(){
+  if(plan==="399"){ balance=1000000; }
+  if(plan==="999"){ balance=10000000; }
+}
 
-  historyEl.innerHTML = "";
-  trades.slice().reverse().forEach(t => {
-    let div = document.createElement("div");
-    div.innerText = `${t.type} | Entry:${t.entry} | Exit:${t.exit} | P/L: ₹${t.pl}`;
+function updateUI(){
+  planEl.innerText=plan;
+  balanceEl.innerText="Balance: ₹"+balance.toFixed(2);
+  priceEl.innerText="Price: "+price.toFixed(2);
+
+  historyEl.innerHTML="";
+  trades.slice().reverse().forEach(t=>{
+    let div=document.createElement("div");
+    div.innerText=`${t.type} | Entry:${t.entry} | Exit:${t.exit} | P/L: ₹${t.pl}`;
     historyEl.appendChild(div);
   });
-
-  if (currentTrade) {
-    openTradeBox.innerHTML =
-      `<div class="open-trade">
-        OPEN TRADE: ${currentTrade.type} @ ${currentTrade.entry}
-        <br> SL: ${currentTrade.sl}
-        <br> Target: ${currentTrade.target}
-      </div>`;
-  } else {
-    openTradeBox.innerHTML = "";
-  }
 }
 
-function movePrice() {
-  let change = (Math.random() - 0.5) * 2;
-  price += change;
-
+function movePrice(){
+  price += (Math.random()-0.5)*2;
   checkTrade();
-
   updateUI();
 }
 
-setInterval(movePrice, 1000);
+setInterval(movePrice,1000);
 
-function openTrade(type) {
+function openTrade(type){
+  if(balance<=0 && plan==="FREE") return alert("Balance Finished. Use Invite or Upgrade.");
 
-  if (currentTrade) return alert("Trade already running");
+  if(currentTrade) return alert("Trade running");
 
-  let lot = parseFloat(document.getElementById("lot").value) || 1;
-  let sl = parseFloat(document.getElementById("sl").value);
-  let target = parseFloat(document.getElementById("target").value);
+  let lot=parseFloat(document.getElementById("lot").value)||1;
+  let sl=parseFloat(document.getElementById("sl").value);
+  let target=parseFloat(document.getElementById("target").value);
 
-  if (!sl || !target) return alert("Enter SL & Target");
+  if(!sl||!target) return alert("Enter SL & Target");
 
-  currentTrade = {
-    type,
-    entry: price,
-    lot,
-    sl,
-    target
-  };
-
-  updateUI();
+  currentTrade={type,entry:price,lot,sl,target};
 }
 
-function checkTrade() {
+function checkTrade(){
+  if(!currentTrade) return;
 
-  if (!currentTrade) return;
+  let hit=false;
+  let pl=0;
 
-  let hit = false;
-  let pl = 0;
-
-  if (currentTrade.type === "BUY") {
-    if (price <= currentTrade.sl || price >= currentTrade.target) {
-      pl = (price - currentTrade.entry) * currentTrade.lot;
-      hit = true;
+  if(currentTrade.type==="BUY"){
+    if(price<=currentTrade.sl||price>=currentTrade.target){
+      pl=(price-currentTrade.entry)*currentTrade.lot;
+      hit=true;
     }
   }
 
-  if (currentTrade.type === "SELL") {
-    if (price >= currentTrade.sl || price <= currentTrade.target) {
-      pl = (currentTrade.entry - price) * currentTrade.lot;
-      hit = true;
+  if(currentTrade.type==="SELL"){
+    if(price>=currentTrade.sl||price<=currentTrade.target){
+      pl=(currentTrade.entry-price)*currentTrade.lot;
+      hit=true;
     }
   }
 
-  if (hit) {
-    balance += pl;
-
+  if(hit){
+    balance+=pl;
     trades.push({
-      type: currentTrade.type,
-      entry: currentTrade.entry.toFixed(2),
-      exit: price.toFixed(2),
-      pl: pl.toFixed(2)
+      type:currentTrade.type,
+      entry:currentTrade.entry.toFixed(2),
+      exit:price.toFixed(2),
+      pl:pl.toFixed(2)
     });
 
-    localStorage.setItem("balance", balance);
-    localStorage.setItem("trades", JSON.stringify(trades));
-
-    currentTrade = null;
+    localStorage.setItem("balance",balance);
+    localStorage.setItem("trades",JSON.stringify(trades));
+    currentTrade=null;
   }
 }
 
+function upgrade(type){
+  plan=type.toString();
+  localStorage.setItem("plan",plan);
+  initPlan();
+  localStorage.setItem("balance",balance);
+  alert("Upgraded to ₹"+type+" Plan");
+  updateUI();
+}
+
+function resetBalance(){
+  if(plan==="FREE") return alert("Reset only for Premium");
+
+  let now=Date.now();
+  if(now-lastReset<86400000) return alert("Reset allowed once in 24h");
+
+  lastReset=now;
+  localStorage.setItem("lastReset",now);
+
+  if(plan==="399") balance=1000000;
+  if(plan==="999") balance=10000000;
+
+  localStorage.setItem("balance",balance);
+  alert("Balance Reset Done");
+}
+
+function inviteReward(){
+  let count=parseInt(localStorage.getItem("invite"))||0;
+  count++;
+  localStorage.setItem("invite",count);
+
+  let reward=1000;
+  if(count===1) reward=5000;
+  if(count===2) reward=4000;
+  if(count===3) reward=3000;
+  if(count===4) reward=2000;
+
+  balance+=reward;
+  localStorage.setItem("balance",balance);
+
+  alert("Invite Reward: ₹"+reward);
+}
+
+initPlan();
 updateUI();
 
 </script>
