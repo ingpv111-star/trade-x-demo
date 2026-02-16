@@ -1,21 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>Trade X Demo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.json">
+
   <style>
-    body { margin:0; font-family:Arial; background:#0f172a; color:white; }
-    header { padding:15px; background:#020617; text-align:center; font-size:20px; font-weight:bold; }
-    .box { padding:12px; text-align:center; background:#111827; margin-bottom:8px; }
-    button { padding:10px; margin:5px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; }
+    body {
+      margin:0;
+      font-family:Arial;
+      background:#0f172a;
+      color:white;
+      text-align:center;
+    }
+
+    header {
+      padding:15px;
+      background:#020617;
+      font-size:20px;
+      font-weight:bold;
+    }
+
+    .box {
+      padding:12px;
+      background:#111827;
+      margin:8px;
+      border-radius:8px;
+    }
+
+    button {
+      padding:10px;
+      margin:5px;
+      border:none;
+      border-radius:6px;
+      font-weight:bold;
+      cursor:pointer;
+    }
+
     .buy{background:green;color:white;}
     .sell{background:red;color:white;}
     .premium{background:purple;color:white;}
-    input{width:95%;padding:6px;margin:4px;border-radius:6px;border:none;}
-    .history{max-height:120px;overflow:auto;background:#111827;padding:8px;font-size:12px;}
+
+    input{
+      width:90%;
+      padding:8px;
+      margin:4px;
+      border-radius:6px;
+      border:none;
+    }
+
+    .history{
+      max-height:120px;
+      overflow:auto;
+      font-size:12px;
+    }
   </style>
 </head>
+
 <body>
 
 <header>📊 TRADE X DEMO</header>
@@ -26,18 +68,18 @@
 </div>
 
 <div class="box">
-  <canvas id="chart" width="350" height="150" style="background:#111827;border-radius:8px;"></canvas>
-  <div id="price" style="margin-top:5px;"></div>
+  <canvas id="chart" width="350" height="150" style="background:#0b1220;border-radius:8px;"></canvas>
+  <div id="price" style="margin-top:8px;"></div>
 </div>
 
 <div class="box">
   <button class="premium" onclick="upgrade(399)">👑 LAUNCH ₹399</button>
   <button class="premium" onclick="upgrade(999)">🚀 LAUNCH ₹999</button>
-  <button onclick="resetBalance()">Reset (Premium Only)</button>
+  <button onclick="resetBalance()">Reset</button>
 </div>
 
 <div class="box">
-  <input type="number" id="lot" placeholder="Lot Size (1 default)">
+  <input type="number" id="lot" placeholder="Lot Size (default 1)">
   <input type="number" id="sl" placeholder="Stop Loss">
   <input type="number" id="target" placeholder="Target">
 
@@ -46,16 +88,19 @@
 </div>
 
 <div class="box">
-  <button onclick="inviteReward()">Use Invite Code</button>
+  <button onclick="inviteReward()">Invite Reward</button>
 </div>
 
 <div class="box history" id="history"></div>
 
+<!-- JS FILE CONNECT -->
 <script src="script.js"></script>
 
+<!-- SERVICE WORKER REGISTER -->
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js');
+  navigator.serviceWorker.register('service-worker.js')
+  .then(() => console.log("Service Worker Registered"));
 }
 </script>
 
