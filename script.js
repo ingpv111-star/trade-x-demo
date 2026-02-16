@@ -1,10 +1,13 @@
+/********************************************************
+ FUTURE READY TRADING STRUCTURE
+ MarketEngine
+ TradeEngine
+ RiskEngine
+ UI Engine
+*********************************************************/
+
 let plan = localStorage.getItem("plan") || "FREE";
 let balance = parseFloat(localStorage.getItem("balance")) || 10000;
-let price = 100;
-let trades = [];
-let currentTrade = null;
-
-let candles = [];
 
 const planEl = document.getElementById("planType");
 const balanceEl = document.getElementById("balance");
@@ -13,160 +16,254 @@ const historyEl = document.getElementById("history");
 const canvas = document.getElementById("chart");
 const ctx = canvas.getContext("2d");
 
-/* -------- PLAN -------- */
+/* ===========================
+   INDEX SELECTOR (C)
+=========================== */
 
-function initPlan(){
-  if(plan==="399"){ balance=1000000; }
-  if(plan==="999"){ balance=10000000; }
-}
+let selectedIndex = "NIFTY";
 
-/* -------- UI -------- */
+const indexSettings = {
+  NIFTY: { base: 18000, volatility: 10 },
+  BANKNIFTY: { base: 42000, volatility: 25 },
+  FINNIFTY: { base: 20000, volatility: 15 }
+};
 
-function updateUI(){
-  planEl.innerText = plan;
-  balanceEl.innerText = "Balance: ₹" + balance.toFixed(2);
-  priceEl.innerText = "Price: " + price.toFixed(2);
-}
+/* ===========================
+   MARKET ENGINE
+=========================== */
 
-/* -------- GRID -------- */
-
-function drawGrid(){
-  ctx.strokeStyle="#1e293b";
-  ctx.lineWidth=1;
-
-  for(let i=0;i<canvas.height;i+=30){
-    ctx.beginPath();
-    ctx.moveTo(0,i);
-    ctx.lineTo(canvas.width,i);
-    ctx.stroke();
+class MarketEngine {
+  constructor() {
+    this.price = indexSettings[selectedIndex].base;
   }
 
-  for(let i=0;i<canvas.width;i+=50){
-    ctx.beginPath();
-    ctx.moveTo(i,0);
-    ctx.lineTo(i,canvas.height);
-    ctx.stroke();
+  tick() {
+    let vol = indexSettings[selectedIndex].volatility;
+    this.price += (Math.random() - 0.5) * vol;
+    return this.price;
+  }
+
+  getPrice() {
+    return this.price;
   }
 }
 
-/* -------- CANDLE DRAW -------- */
+const market = new MarketEngine();
 
-function drawCandles(){
+/* ===========================
+   TRADE ENGINE
+=========================== */
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+class TradeEngine {
+  constructor() {
+    this.currentTrade = null;
+  }
+
+  open(type, sl, target) {
+    if (this.currentTrade) return alert("Trade already running");
+
+    this.currentTrade = {
+      type,
+      entry: market.getPrice(),
+      sl,
+      target
+    };
+  }
+
+  check() {
+    if (!this.currentTrade) return;
+
+    let price = market.getPrice();
+    let trade = this.currentTrade;
+
+    let hit = false;
+    let pl = 0;
+
+    if (trade.type === "BUY") {
+      pl = price - trade.entry;
+      if (price <= trade.sl || price >= trade.target) hit = true;
+    }
+
+    if (trade.type === "SELL") {
+      pl = trade.entry - price;
+      if (price >= trade.sl || price <= trade.target) hit = true;
+    }
+
+    showLivePL(pl);
+
+    if (hit) {
+      balance += pl;
+      addHistory(trade.type, trade.entry, price, pl);
+      this.currentTrade = null;
+    }
+  }
+}
+
+const trader = new TradeEngine();
+
+/* ===========================
+   RISK ENGINE
+=========================== */
+
+class RiskEngine {
+  static canTrade() {
+    if (plan === "FREE" && balance <= 0) {
+      alert("Upgrade Required");
+      return false;
+    }
+    return true;
+  }
+}
+
+/* ===========================
+   UI ENGINE
+=========================== */
+
+let candles = [];
+let tickCount = 0;
+let currentCandle = null;
+
+function drawGrid() {
+  ctx.strokeStyle = "#1e293b";
+  for (let i = 0; i < canvas.height; i += 30) {
+    ctx.beginPath();
+    ctx.moveTo(0, i);
+    ctx.lineTo(canvas.width, i);
+    ctx.stroke();
+  }
+}
+
+function drawCandles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGrid();
 
-  if(candles.length===0) return;
+  if (candles.length === 0) return;
 
-  let max = Math.max(...candles.map(c=>c.high));
-  let min = Math.min(...candles.map(c=>c.low));
-  let range = max-min || 1;
+  let max = Math.max(...candles.map(c => c.high));
+  let min = Math.min(...candles.map(c => c.low));
+  let range = max - min || 1;
 
-  let candleWidth = 6;
+  candles.forEach((c, i) => {
+    let x = i * 8 + 10;
 
-  candles.forEach((c,i)=>{
+    let openY = canvas.height - ((c.open - min) / range) * canvas.height;
+    let closeY = canvas.height - ((c.close - min) / range) * canvas.height;
+    let highY = canvas.height - ((c.high - min) / range) * canvas.height;
+    let lowY = canvas.height - ((c.low - min) / range) * canvas.height;
 
-    let x = i*10 + 10;
-
-    let openY  = canvas.height - ((c.open-min)/range)*canvas.height;
-    let closeY = canvas.height - ((c.close-min)/range)*canvas.height;
-    let highY  = canvas.height - ((c.high-min)/range)*canvas.height;
-    let lowY   = canvas.height - ((c.low-min)/range)*canvas.height;
-
-    ctx.strokeStyle="#aaa";
+    ctx.strokeStyle = "#aaa";
     ctx.beginPath();
-    ctx.moveTo(x,highY);
-    ctx.lineTo(x,lowY);
+    ctx.moveTo(x, highY);
+    ctx.lineTo(x, lowY);
     ctx.stroke();
 
-    ctx.fillStyle = c.close>c.open ? "#22c55e" : "#ef4444";
+    ctx.fillStyle = c.close > c.open ? "#22c55e" : "#ef4444";
 
     ctx.fillRect(
-      x-candleWidth/2,
-      Math.min(openY,closeY),
-      candleWidth,
-      Math.abs(closeY-openY)||2
+      x - 3,
+      Math.min(openY, closeY),
+      6,
+      Math.abs(closeY - openY) || 2
     );
   });
 }
 
-/* -------- PRICE SIMULATION -------- */
+function showLivePL(pl) {
+  if (!trader.currentTrade) return;
 
-let tick=0;
-let currentCandle = null;
+  priceEl.innerText =
+    "Price: " +
+    market.getPrice().toFixed(2) +
+    " | Live P/L: ₹" +
+    pl.toFixed(2);
+}
 
-function movePrice(){
+function addHistory(type, entry, exit, pl) {
+  let div = document.createElement("div");
+  div.innerText =
+    type +
+    " | Entry: " +
+    entry.toFixed(2) +
+    " | Exit: " +
+    exit.toFixed(2) +
+    " | P/L: ₹" +
+    pl.toFixed(2);
+  historyEl.prepend(div);
+}
 
-  price += (Math.random()-0.5)*2;
-  tick++;
+function updateBalance() {
+  balanceEl.innerText = "Balance: ₹" + balance.toFixed(2);
+  planEl.innerText = plan;
+}
 
-  if(!currentCandle){
-    currentCandle={
-      open:price,
-      high:price,
-      low:price,
-      close:price
+/* ===========================
+   MAIN LOOP
+=========================== */
+
+function mainLoop() {
+  let price = market.tick();
+  tickCount++;
+
+  if (!currentCandle) {
+    currentCandle = {
+      open: price,
+      high: price,
+      low: price,
+      close: price
     };
   }
 
-  currentCandle.high = Math.max(currentCandle.high,price);
-  currentCandle.low  = Math.min(currentCandle.low,price);
-  currentCandle.close=price;
+  currentCandle.high = Math.max(currentCandle.high, price);
+  currentCandle.low = Math.min(currentCandle.low, price);
+  currentCandle.close = price;
 
-  if(tick%5===0){
+  if (tickCount % 5 === 0) {
     candles.push(currentCandle);
-    if(candles.length>40) candles.shift();
-    currentCandle=null;
+    if (candles.length > 40) candles.shift();
+    currentCandle = null;
   }
 
+  trader.check();
   drawCandles();
-  updateUI();
+  updateBalance();
 }
 
-setInterval(movePrice,1000);
+setInterval(mainLoop, 1000);
 
-/* -------- TRADING -------- */
+/* ===========================
+   BUTTON FUNCTIONS
+=========================== */
 
-function openTrade(type){
-  if(balance<=0 && plan==="FREE") return alert("Balance Finished");
-  if(currentTrade) return alert("Trade running");
+function openTrade(type) {
+  if (!RiskEngine.canTrade()) return;
 
-  currentTrade={type,entry:price};
+  let sl = parseFloat(document.getElementById("sl").value);
+  let target = parseFloat(document.getElementById("target").value);
 
-  drawTradeMarker(type);
+  if (!sl || !target) return alert("Enter SL & Target");
+
+  trader.open(type, sl, target);
 }
 
-function drawTradeMarker(type){
+function upgrade(type) {
+  plan = type.toString();
+  localStorage.setItem("plan", plan);
 
-  ctx.fillStyle= type==="BUY" ? "#22c55e" : "#ef4444";
+  if (plan === "399") balance = 1000000;
+  if (plan === "999") balance = 10000000;
 
-  ctx.beginPath();
-  ctx.arc(canvas.width-20,20,6,0,Math.PI*2);
-  ctx.fill();
+  localStorage.setItem("balance", balance);
+  updateBalance();
+  alert("Upgraded");
 }
 
-/* -------- UPGRADE -------- */
+function resetBalance() {
+  if (plan === "FREE") return alert("Premium Only");
 
-function upgrade(type){
-  plan=type.toString();
-  localStorage.setItem("plan",plan);
-  initPlan();
-  localStorage.setItem("balance",balance);
-  alert("Upgraded to ₹"+type);
-  updateUI();
+  if (plan === "399") balance = 1000000;
+  if (plan === "999") balance = 10000000;
+
+  updateBalance();
 }
 
-function resetBalance(){
-  if(plan==="FREE") return alert("Premium Only");
-
-  if(plan==="399") balance=1000000;
-  if(plan==="999") balance=10000000;
-
-  localStorage.setItem("balance",balance);
-  updateUI();
-}
-
-/* -------- START -------- */
-
-initPlan();
-updateUI();
+updateBalance();
