@@ -63,7 +63,6 @@ setInterval(movePrice,1000);
 
 function openTrade(type){
   if(balance<=0 && plan==="FREE") return alert("Balance Finished. Use Invite or Upgrade.");
-
   if(currentTrade) return alert("Trade running");
 
   let lot=parseFloat(document.getElementById("lot").value)||1;
