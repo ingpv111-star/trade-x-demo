@@ -14,10 +14,14 @@ const historyEl = document.getElementById("history");
 const canvas = document.getElementById("chart");
 const ctx = canvas.getContext("2d");
 
+/* ---------------- PLAN ---------------- */
+
 function initPlan(){
   if(plan==="399"){ balance=1000000; }
   if(plan==="999"){ balance=10000000; }
 }
+
+/* ---------------- UI UPDATE ---------------- */
 
 function updateUI(){
   planEl.innerText=plan;
@@ -31,6 +35,8 @@ function updateUI(){
     historyEl.appendChild(div);
   });
 }
+
+/* ---------------- CHART ---------------- */
 
 function drawChart() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -48,6 +54,8 @@ function drawChart() {
   ctx.stroke();
 }
 
+/* ---------------- PRICE MOVEMENT ---------------- */
+
 function movePrice(){
   price += (Math.random()-0.5)*2;
 
@@ -60,6 +68,8 @@ function movePrice(){
 }
 
 setInterval(movePrice,1000);
+
+/* ---------------- TRADING ---------------- */
 
 function openTrade(type){
   if(balance<=0 && plan==="FREE") return alert("Balance Finished.");
@@ -96,6 +106,7 @@ function checkTrade(){
 
   if(hit){
     balance+=pl;
+
     trades.push({
       type:currentTrade.type,
       entry:currentTrade.entry.toFixed(2),
@@ -109,6 +120,8 @@ function checkTrade(){
   }
 }
 
+/* ---------------- UPGRADE ---------------- */
+
 function upgrade(type){
   plan=type.toString();
   localStorage.setItem("plan",plan);
@@ -118,6 +131,8 @@ function upgrade(type){
   updateUI();
 }
 
+/* ---------------- RESET ---------------- */
+
 function resetBalance(){
   if(plan==="FREE") return alert("Premium Only");
 
@@ -126,13 +141,20 @@ function resetBalance(){
 
   localStorage.setItem("balance",balance);
   alert("Balance Reset Done");
+  updateUI();
 }
+
+/* ---------------- INVITE ---------------- */
 
 function inviteReward(){
   balance+=1000;
   localStorage.setItem("balance",balance);
   alert("Invite Reward ₹1000 Added");
+  updateUI();
 }
+
+/* ---------------- INIT ---------------- */
 
 initPlan();
 updateUI();
+drawChart();
