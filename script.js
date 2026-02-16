@@ -1,10 +1,10 @@
 let plan = localStorage.getItem("plan") || "FREE";
 let balance = parseFloat(localStorage.getItem("balance")) || 10000;
 let price = 100;
-let trades = JSON.parse(localStorage.getItem("trades")) || [];
+let trades = [];
 let currentTrade = null;
 
-let chartData = [];
+let candles = [];
 
 const planEl = document.getElementById("planType");
 const balanceEl = document.getElementById("balance");
@@ -13,91 +13,146 @@ const historyEl = document.getElementById("history");
 const canvas = document.getElementById("chart");
 const ctx = canvas.getContext("2d");
 
-/* ---------- INIT PLAN ---------- */
+/* -------- PLAN -------- */
 
 function initPlan(){
   if(plan==="399"){ balance=1000000; }
   if(plan==="999"){ balance=10000000; }
 }
 
-/* ---------- UPDATE UI ---------- */
+/* -------- UI -------- */
 
 function updateUI(){
   planEl.innerText = plan;
   balanceEl.innerText = "Balance: ₹" + balance.toFixed(2);
   priceEl.innerText = "Price: " + price.toFixed(2);
+}
 
-  historyEl.innerHTML = "";
-  trades.slice().reverse().forEach(t=>{
-    let div=document.createElement("div");
-    div.innerText=`${t.type} | Entry:${t.entry} | Exit:${t.exit} | P/L: ₹${t.pl}`;
-    historyEl.appendChild(div);
+/* -------- GRID -------- */
+
+function drawGrid(){
+  ctx.strokeStyle="#1e293b";
+  ctx.lineWidth=1;
+
+  for(let i=0;i<canvas.height;i+=30){
+    ctx.beginPath();
+    ctx.moveTo(0,i);
+    ctx.lineTo(canvas.width,i);
+    ctx.stroke();
+  }
+
+  for(let i=0;i<canvas.width;i+=50){
+    ctx.beginPath();
+    ctx.moveTo(i,0);
+    ctx.lineTo(i,canvas.height);
+    ctx.stroke();
+  }
+}
+
+/* -------- CANDLE DRAW -------- */
+
+function drawCandles(){
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawGrid();
+
+  if(candles.length===0) return;
+
+  let max = Math.max(...candles.map(c=>c.high));
+  let min = Math.min(...candles.map(c=>c.low));
+  let range = max-min || 1;
+
+  let candleWidth = 6;
+
+  candles.forEach((c,i)=>{
+
+    let x = i*10 + 10;
+
+    let openY  = canvas.height - ((c.open-min)/range)*canvas.height;
+    let closeY = canvas.height - ((c.close-min)/range)*canvas.height;
+    let highY  = canvas.height - ((c.high-min)/range)*canvas.height;
+    let lowY   = canvas.height - ((c.low-min)/range)*canvas.height;
+
+    ctx.strokeStyle="#aaa";
+    ctx.beginPath();
+    ctx.moveTo(x,highY);
+    ctx.lineTo(x,lowY);
+    ctx.stroke();
+
+    ctx.fillStyle = c.close>c.open ? "#22c55e" : "#ef4444";
+
+    ctx.fillRect(
+      x-candleWidth/2,
+      Math.min(openY,closeY),
+      candleWidth,
+      Math.abs(closeY-openY)||2
+    );
   });
 }
 
-/* ---------- DRAW CHART (STABLE) ---------- */
+/* -------- PRICE SIMULATION -------- */
 
-function drawChart() {
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  if(chartData.length < 2) return;
-
-  let fixedMin = 80;
-  let fixedMax = 120;
-  let range = fixedMax - fixedMin;
-
-  ctx.beginPath();
-  ctx.strokeStyle = "#22c55e";
-  ctx.lineWidth = 2;
-
-  chartData.forEach((p, i) => {
-
-    let x = (i / chartData.length) * canvas.width;
-    let y = canvas.height - ((p - fixedMin) / range) * canvas.height;
-
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-
-  ctx.stroke();
-}
-
-/* ---------- PRICE MOVEMENT ---------- */
+let tick=0;
+let currentCandle = null;
 
 function movePrice(){
-  price += (Math.random() - 0.5) * 2;
 
-  chartData.push(price);
-  if(chartData.length > 50) chartData.shift();
+  price += (Math.random()-0.5)*2;
+  tick++;
 
-  drawChart();
+  if(!currentCandle){
+    currentCandle={
+      open:price,
+      high:price,
+      low:price,
+      close:price
+    };
+  }
+
+  currentCandle.high = Math.max(currentCandle.high,price);
+  currentCandle.low  = Math.min(currentCandle.low,price);
+  currentCandle.close=price;
+
+  if(tick%5===0){
+    candles.push(currentCandle);
+    if(candles.length>40) candles.shift();
+    currentCandle=null;
+  }
+
+  drawCandles();
   updateUI();
 }
 
-setInterval(movePrice, 1000);
+setInterval(movePrice,1000);
 
-/* ---------- TRADING ---------- */
+/* -------- TRADING -------- */
 
 function openTrade(type){
-  if(balance <= 0 && plan==="FREE") return alert("Balance Finished.");
+  if(balance<=0 && plan==="FREE") return alert("Balance Finished");
   if(currentTrade) return alert("Trade running");
 
-  let lot=parseFloat(document.getElementById("lot").value)||1;
-  let sl=parseFloat(document.getElementById("sl").value);
-  let target=parseFloat(document.getElementById("target").value);
+  currentTrade={type,entry:price};
 
-  if(!sl || !target) return alert("Enter SL & Target");
-
-  currentTrade={type,entry:price,lot,sl,target};
+  drawTradeMarker(type);
 }
+
+function drawTradeMarker(type){
+
+  ctx.fillStyle= type==="BUY" ? "#22c55e" : "#ef4444";
+
+  ctx.beginPath();
+  ctx.arc(canvas.width-20,20,6,0,Math.PI*2);
+  ctx.fill();
+}
+
+/* -------- UPGRADE -------- */
 
 function upgrade(type){
   plan=type.toString();
   localStorage.setItem("plan",plan);
   initPlan();
   localStorage.setItem("balance",balance);
-  alert("Upgraded to ₹"+type+" Plan");
+  alert("Upgraded to ₹"+type);
   updateUI();
 }
 
@@ -108,18 +163,10 @@ function resetBalance(){
   if(plan==="999") balance=10000000;
 
   localStorage.setItem("balance",balance);
-  alert("Balance Reset Done");
   updateUI();
 }
 
-function inviteReward(){
-  balance+=1000;
-  localStorage.setItem("balance",balance);
-  alert("Invite Reward ₹1000 Added");
-  updateUI();
-}
-
-/* ---------- START ---------- */
+/* -------- START -------- */
 
 initPlan();
 updateUI();
