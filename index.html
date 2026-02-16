@@ -3,12 +3,12 @@
 <head>
   <title>Trade X Demo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
   <style>
     body { margin:0; font-family:Arial; background:#0f172a; color:white; }
     header { padding:15px; background:#020617; text-align:center; font-size:20px; font-weight:bold; }
-    .box { padding:12px; text-align:center; background:#111827; }
+    .box { padding:12px; text-align:center; background:#111827; margin-bottom:8px; }
     .green { color:#22c55e; }
-    .red { color:#ef4444; }
     button { padding:10px; margin:5px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; }
     .buy{background:green;color:white;}
     .sell{background:red;color:white;}
@@ -27,12 +27,13 @@
 </div>
 
 <div class="box">
-  <div id="price">Price: 100</div>
+  <canvas id="chart" width="350" height="150" style="background:#111827;border-radius:8px;"></canvas>
+  <div id="price" style="margin-top:5px;"></div>
 </div>
 
 <div class="box">
-  <button class="premium" onclick="upgrade(399)">Upgrade ₹399</button>
-  <button class="premium" onclick="upgrade(999)">Upgrade ₹999</button>
+  <button class="premium" onclick="upgrade(399)">👑 LAUNCH ₹399</button>
+  <button class="premium" onclick="upgrade(999)">🚀 LAUNCH ₹999</button>
   <button onclick="resetBalance()">Reset (Premium Only)</button>
 </div>
 
@@ -51,141 +52,7 @@
 
 <div class="box history" id="history"></div>
 
-<script>
-
-let plan = localStorage.getItem("plan") || "FREE";
-let balance = parseFloat(localStorage.getItem("balance")) || 10000;
-let price = 100;
-let trades = JSON.parse(localStorage.getItem("trades")) || [];
-let currentTrade = null;
-let lastReset = localStorage.getItem("lastReset") || 0;
-
-const planEl = document.getElementById("planType");
-const balanceEl = document.getElementById("balance");
-const priceEl = document.getElementById("price");
-const historyEl = document.getElementById("history");
-
-function initPlan(){
-  if(plan==="399"){ balance=1000000; }
-  if(plan==="999"){ balance=10000000; }
-}
-
-function updateUI(){
-  planEl.innerText=plan;
-  balanceEl.innerText="Balance: ₹"+balance.toFixed(2);
-  priceEl.innerText="Price: "+price.toFixed(2);
-
-  historyEl.innerHTML="";
-  trades.slice().reverse().forEach(t=>{
-    let div=document.createElement("div");
-    div.innerText=`${t.type} | Entry:${t.entry} | Exit:${t.exit} | P/L: ₹${t.pl}`;
-    historyEl.appendChild(div);
-  });
-}
-
-function movePrice(){
-  price += (Math.random()-0.5)*2;
-  checkTrade();
-  updateUI();
-}
-
-setInterval(movePrice,1000);
-
-function openTrade(type){
-  if(balance<=0 && plan==="FREE") return alert("Balance Finished. Use Invite or Upgrade.");
-
-  if(currentTrade) return alert("Trade running");
-
-  let lot=parseFloat(document.getElementById("lot").value)||1;
-  let sl=parseFloat(document.getElementById("sl").value);
-  let target=parseFloat(document.getElementById("target").value);
-
-  if(!sl||!target) return alert("Enter SL & Target");
-
-  currentTrade={type,entry:price,lot,sl,target};
-}
-
-function checkTrade(){
-  if(!currentTrade) return;
-
-  let hit=false;
-  let pl=0;
-
-  if(currentTrade.type==="BUY"){
-    if(price<=currentTrade.sl||price>=currentTrade.target){
-      pl=(price-currentTrade.entry)*currentTrade.lot;
-      hit=true;
-    }
-  }
-
-  if(currentTrade.type==="SELL"){
-    if(price>=currentTrade.sl||price<=currentTrade.target){
-      pl=(currentTrade.entry-price)*currentTrade.lot;
-      hit=true;
-    }
-  }
-
-  if(hit){
-    balance+=pl;
-    trades.push({
-      type:currentTrade.type,
-      entry:currentTrade.entry.toFixed(2),
-      exit:price.toFixed(2),
-      pl:pl.toFixed(2)
-    });
-
-    localStorage.setItem("balance",balance);
-    localStorage.setItem("trades",JSON.stringify(trades));
-    currentTrade=null;
-  }
-}
-
-function upgrade(type){
-  plan=type.toString();
-  localStorage.setItem("plan",plan);
-  initPlan();
-  localStorage.setItem("balance",balance);
-  alert("Upgraded to ₹"+type+" Plan");
-  updateUI();
-}
-
-function resetBalance(){
-  if(plan==="FREE") return alert("Reset only for Premium");
-
-  let now=Date.now();
-  if(now-lastReset<86400000) return alert("Reset allowed once in 24h");
-
-  lastReset=now;
-  localStorage.setItem("lastReset",now);
-
-  if(plan==="399") balance=1000000;
-  if(plan==="999") balance=10000000;
-
-  localStorage.setItem("balance",balance);
-  alert("Balance Reset Done");
-}
-
-function inviteReward(){
-  let count=parseInt(localStorage.getItem("invite"))||0;
-  count++;
-  localStorage.setItem("invite",count);
-
-  let reward=1000;
-  if(count===1) reward=5000;
-  if(count===2) reward=4000;
-  if(count===3) reward=3000;
-  if(count===4) reward=2000;
-
-  balance+=reward;
-  localStorage.setItem("balance",balance);
-
-  alert("Invite Reward: ₹"+reward);
-}
-
-initPlan();
-updateUI();
-
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
