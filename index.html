@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Trade X Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
+<style>
+body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center;}
+header{padding:15px;background:#020617;font-size:20px;font-weight:bold;}
+.box{padding:12px;background:#111827;margin:8px;border-radius:8px;}
+button{padding:10px;margin:5px;border:none;border-radius:6px;font-weight:bold;cursor:pointer;}
+.buy{background:green;color:white;}
+.sell{background:red;color:white;}
+.premium{background:purple;color:white;}
+input{width:90%;padding:8px;margin:4px;border-radius:6px;border:none;}
+.history{max-height:120px;overflow:auto;font-size:12px;}
+</style>
+</head>
+
+<body>
+
+<header>📊 TRADE X PRO</header>
+
+<div class="box">
+Plan: <span id="planType">FREE</span><br>
+<span id="balance">Balance: ₹10000</span>
+</div>
+
+<div class="box">
+<div id="chart" style="height:300px;"></div>
+<div id="price"></div>
+</div>
+
+<div class="box">
+<button class="premium" onclick="upgrade(399)">👑 ₹399</button>
+<button class="premium" onclick="upgrade(999)">🚀 ₹999</button>
+<button onclick="resetBalance()">Reset</button>
+</div>
+
+<div class="box">
+<input type="number" id="sl" placeholder="Stop Loss">
+<input type="number" id="target" placeholder="Target">
+<button class="buy" onclick="openTrade('BUY')">BUY</button>
+<button class="sell" onclick="openTrade('SELL')">SELL</button>
+</div>
+
+<div class="box history" id="history"></div>
+
+<script>
+
+let plan="FREE";
+let balance=10000;
+let currentTrade=null;
+
+const balanceEl=document.getElementById("balance");
+const planEl=document.getElementById("planType");
+const historyEl=document.getElementById("history");
+const priceEl=document.getElementById("price");
+
+function updateUI(){
+balanceEl.innerText="Balance: ₹"+balance.toFixed(2);
+planEl.innerText=plan;
+}
+
+const chart=LightweightCharts.createChart(
+document.getElementById("chart"),
+{
+layout:{background:{color:"#0f172a"},textColor:"#ffffff"},
+grid:{vertLines:{color:"#1e293b"},horzLines:{color:"#1e293b"}},
+width:window.innerWidth-30,
+height:300
+}
+);
+
+const candleSeries=chart.addCandlestickSeries();
+
+let candleData=[];
+let lastPrice=18000;
+let lastTime=Math.floor(Date.now()/1000);
+
+function generateCandle(){
+let open=lastPrice;
+let close=open+(Math.random()-0.5)*40;
+let high=Math.max(open,close)+Math.random()*20;
+let low=Math.min(open,close)-Math.random()*20;
+
+lastPrice=close;
+lastTime+=60;
+
+const candle={time:lastTime,open,high,low,close};
+
+candleData.push(candle);
+if(candleData.length>50)candleData.shift();
+
+candleSeries.setData(candleData);
+
+priceEl.innerText="Live Price: ₹"+close.toFixed(2);
+
+checkTrade(close);
+}
+
+setInterval(generateCandle,2000);
+
+function openTrade(type){
+let sl=parseFloat(document.getElementById("sl").value);
+let target=parseFloat(document.getElementById("target").value);
+if(!sl||!target){alert("Enter SL & Target");return;}
+currentTrade={type,entry:lastPrice,sl,target};
+alert("Trade Opened @ "+lastPrice.toFixed(2));
+}
+
+function checkTrade(price){
+if(!currentTrade)return;
+let trade=currentTrade;
+let pl=0;
+
+if(trade.type==="BUY"){
+pl=price-trade.entry;
+if(price<=trade.sl||price>=trade.target){
+balance+=pl;
+closeTrade(price,pl);
+}
+}
+
+if(trade.type==="SELL"){
+pl=trade.entry-price;
+if(price>=trade.sl||price<=trade.target){
+balance+=pl;
+closeTrade(price,pl);
+}
+}
+}
+
+function closeTrade(price,pl){
+let div=document.createElement("div");
+div.innerText=
+currentTrade.type+
+" | Entry:"+currentTrade.entry.toFixed(2)+
+" | Exit:"+price.toFixed(2)+
+" | P/L: ₹"+pl.toFixed(2);
+historyEl.prepend(div);
+currentTrade=null;
+updateUI();
+}
+
+function upgrade(type){
+plan=type;
+if(type===399)balance=1000000;
+if(type===999)balance=10000000;
+updateUI();
+alert("Upgraded");
+}
+
+function resetBalance(){
+if(plan==="FREE"){alert("Premium Only");return;}
+if(plan===399)balance=1000000;
+if(plan===999)balance=10000000;
+updateUI();
+}
+
+updateUI();
+
+</script>
+
+</body>
+</html>
